@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Beacon - Local Document Assistant</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="beacon"><span class="beacon-beam"></span></span>
+        <h1>Beacon</h1>
+      </div>
+
+      <nav class="nav">
+        <button class="nav-item active" data-view="chat">
+          <span class="nav-icon">&#128172;</span><span data-i18n="nav.chat">Chat</span>
+        </button>
+        <button class="nav-item" data-view="docs">
+          <span class="nav-icon">&#128196;</span><span data-i18n="nav.docs">Documents</span>
+        </button>
+        <button class="nav-item" data-view="tests">
+          <span class="nav-icon">&#129514;</span><span data-i18n="nav.tests">Tests</span>
+        </button>
+        <button class="nav-item" data-view="settings">
+          <span class="nav-icon">&#9881;&#65039;</span><span data-i18n="nav.settings">Settings</span>
+        </button>
+        <button class="nav-item" data-view="about">
+          <span class="nav-icon">&#128161;</span><span data-i18n="nav.about">About</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-overview">
+        <div class="overview-title" data-i18n="sidebar.overviewTitle">Overview</div>
+        <div class="overview-grid">
+          <div class="overview-item"><strong id="ov-docs">0</strong><span data-i18n="sidebar.ovDocs">docs</span></div>
+          <div class="overview-item"><strong id="ov-chunks">0</strong><span data-i18n="sidebar.ovChunks">chunks</span></div>
+          <div class="overview-item"><strong id="ov-tests">0/0</strong><span data-i18n="sidebar.ovTests">tests passed</span></div>
+          <div class="overview-item"><strong id="ov-questions">0</strong><span data-i18n="sidebar.ovQuestions">asked</span></div>
+        </div>
+
+        <div class="overview-title activity-title" data-i18n="sidebar.activityTitle">Recent activity</div>
+        <ul id="activity-list" class="activity-list">
+          <li class="activity-empty" data-i18n="sidebar.activityEmpty">Nothing yet</li>
+        </ul>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="offline-badge">
+          <span class="beacon beacon-sm"><span class="beacon-beam"></span></span>
+          <span data-i18n="sidebar.offline">Offline / on-device</span>
+        </div>
+        <div id="sidebar-status" class="sidebar-status">&hellip;</div>
+      </div>
+    </aside>
+
+    <main class="content">
+
+      <!-- CHAT VIEW -->
+      <section id="view-chat" class="view active">
+        <header class="topbar">
+          <h2 data-i18n="chat.title">Ask your documents</h2>
+          <div class="topbar-actions">
+            <button id="btn-export-chat" class="ghost-btn" data-i18n="chat.export">Export</button>
+            <button id="btn-clear-chat" class="ghost-btn" data-i18n="chat.clear">Clear</button>
+          </div>
+        </header>
+
+        <div class="scope-row">
+          <label for="chat-collection" data-i18n="chat.scopeLabel">Ask about:</label>
+          <select id="chat-collection">
+            <option value="" data-i18n="chat.scopeAll">All collections</option>
+          </select>
+        </div>
+
+        <div id="suggestions" class="suggestions"></div>
+
+        <div id="log" class="log">
+          <div class="msg assistant">
+            <p data-i18n="chat.welcome">
+              Hi! Ask me anything about the documents in the knowledge base.
+              I only answer from what's actually indexed, and I'll tell you when I don't know.
+            </p>
+          </div>
+        </div>
+
+        <form id="composer" class="composer">
+          <input id="question" type="text" autocomplete="off" data-i18n-placeholder="chat.placeholder" placeholder="Ask a question..." />
+          <button type="submit" data-i18n="chat.ask">Ask</button>
+        </form>
+      </section>
+
+      <!-- DOCUMENTS VIEW -->
+      <section id="view-docs" class="view">
+        <header class="topbar">
+          <h2 data-i18n="docs.title">Knowledge base</h2>
+          <button id="btn-reindex" class="ghost-btn" data-i18n="docs.reindex">Reindex</button>
+        </header>
+
+        <div id="doc-stats" class="doc-stats"></div>
+
+        <div class="collection-picker">
+          <label for="upload-collection" data-i18n="docs.collectionLabel">Add to collection:</label>
+          <input id="upload-collection" type="text" list="collection-options" data-i18n-placeholder="docs.collectionPlaceholder" placeholder="e.g. Cars, Course Notes... (leave blank for General)" />
+          <datalist id="collection-options"></datalist>
+        </div>
+
+        <div id="dropzone" class="dropzone">
+          <div class="dropzone-icon">&#128193;</div>
+          <div data-i18n="docs.dropzone">Drag files here, or click to browse</div>
+          <input id="upload-input" type="file" accept=".md,.txt,.pdf,.docx" multiple hidden />
+        </div>
+        <p class="hint" data-i18n="docs.hint">
+          Only .md and .txt files are supported. Uploading or deleting a file automatically rebuilds the index.
+        </p>
+
+        <input id="doc-search" type="text" class="doc-search" data-i18n-placeholder="docs.search" placeholder="Filter documents..." />
+
+        <div id="doc-list" class="doc-list"></div>
+      </section>
+
+      <!-- SETTINGS VIEW -->
+      <section id="view-settings" class="view">
+        <header class="topbar">
+          <h2 data-i18n="settings.title">Settings</h2>
+        </header>
+
+        <div class="settings-grid">
+          <div class="setting-row">
+            <label data-i18n="settings.topk">Passages retrieved per question (top-k)</label>
+            <div class="setting-control">
+              <input id="setting-topk" type="range" min="1" max="8" step="1" value="3" />
+              <span id="setting-topk-value">3</span>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <label data-i18n="settings.showSources">Show retrieved passages under each answer</label>
+            <div class="setting-control">
+              <input id="setting-show-sources" type="checkbox" checked />
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <label data-i18n="settings.confidence">Low-confidence threshold (similarity score)</label>
+            <div class="setting-control">
+              <input id="setting-confidence" type="range" min="0" max="0.6" step="0.02" value="0.15" />
+              <span id="setting-confidence-value">0.15</span>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <label data-i18n="settings.theme">Theme</label>
+            <div class="setting-control">
+              <select id="setting-theme">
+                <option value="dark" data-i18n="settings.themeDark">Dark</option>
+                <option value="light" data-i18n="settings.themeLight">Light</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <label data-i18n="settings.language">Language</label>
+            <div class="setting-control">
+              <select id="setting-lang">
+                <option value="tr">Türkçe</option>
+                <option value="en">English</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="backend-card">
+          <h3 data-i18n="settings.backends">Active backends</h3>
+          <div id="backend-details" class="backend-details">&hellip;</div>
+        </div>
+
+        <div class="backend-card">
+          <h3 data-i18n="settings.pipeline">Pipeline configuration</h3>
+          <div id="pipeline-details" class="backend-details">&hellip;</div>
+        </div>
+      </section>
+
+      <!-- TESTS VIEW -->
+      <section id="view-tests" class="view">
+        <header class="topbar">
+          <h2 data-i18n="tests.title">Test set</h2>
+          <button id="btn-run-all-tests" class="ghost-btn" data-i18n="tests.runAll">Run all</button>
+        </header>
+
+        <p class="hint" data-i18n="tests.hint">
+          Add questions you expect the assistant to answer correctly - and some it should
+          honestly say it can't answer. Run them, read the result, and mark it pass or fail.
+        </p>
+
+        <div id="tests-summary" class="doc-stats"></div>
+
+        <form id="test-form" class="inline-form">
+          <input id="test-question" type="text" data-i18n-placeholder="tests.questionPlaceholder" placeholder="Test question..." />
+          <input id="test-note" type="text" data-i18n-placeholder="tests.notePlaceholder" placeholder="Expected (optional)..." />
+          <button type="submit" data-i18n="tests.add">Add</button>
+        </form>
+
+        <ul id="test-list" class="doc-list"></ul>
+      </section>
+
+      <!-- ABOUT VIEW -->
+      <section id="view-about" class="view">
+        <header class="topbar">
+          <h2 data-i18n="about.title">How Beacon works</h2>
+        </header>
+
+        <blockquote class="name-quote">
+          <p data-i18n="about.nameQuote">
+            A beacon lights the rocks that are actually there - it doesn't throw light
+            into open water and pretend something's there. That's the one rule Beacon
+            follows: answer what's real, and say so plainly when nothing is.
+          </p>
+        </blockquote>
+
+        <p class="hint" data-i18n="about.intro">
+          Beacon never answers from memory - every answer is grounded in the documents
+          you've indexed. Here's the pipeline behind each question:
+        </p>
+
+        <div class="pipeline">
+          <div class="pipeline-step">
+            <div class="pipeline-icon">&#9986;&#65039;</div>
+            <div class="pipeline-label" data-i18n="about.step1Title">1. Chunking</div>
+            <div class="pipeline-desc" data-i18n="about.step1Desc">Documents are split into overlapping paragraph-sized passages.</div>
+          </div>
+          <div class="pipeline-arrow">&#8594;</div>
+          <div class="pipeline-step">
+            <div class="pipeline-icon">&#128290;</div>
+            <div class="pipeline-label" data-i18n="about.step2Title">2. Embedding</div>
+            <div class="pipeline-desc" data-i18n="about.step2Desc">Each passage becomes a numeric vector capturing its meaning.</div>
+          </div>
+          <div class="pipeline-arrow">&#8594;</div>
+          <div class="pipeline-step">
+            <div class="pipeline-icon">&#128451;&#65039;</div>
+            <div class="pipeline-label" data-i18n="about.step3Title">3. SQLite</div>
+            <div class="pipeline-desc" data-i18n="about.step3Desc">Passages and vectors are stored locally in a single database file.</div>
+          </div>
+          <div class="pipeline-arrow">&#8594;</div>
+          <div class="pipeline-step">
+            <div class="pipeline-icon">&#128269;</div>
+            <div class="pipeline-label" data-i18n="about.step4Title">4. Retrieval</div>
+            <div class="pipeline-desc" data-i18n="about.step4Desc">Your question is compared against every vector to find the closest matches.</div>
+          </div>
+          <div class="pipeline-arrow">&#8594;</div>
+          <div class="pipeline-step">
+            <div class="pipeline-icon">&#128161;</div>
+            <div class="pipeline-label" data-i18n="about.step5Title">5. Generation</div>
+            <div class="pipeline-desc" data-i18n="about.step5Desc">A local model answers using only the retrieved passages as context.</div>
+          </div>
+        </div>
+
+        <div class="backend-card">
+          <h3 data-i18n="about.stackTitle">Built with</h3>
+          <div class="backend-details" data-i18n="about.stackDesc">
+            Python, SQLite, Flask, numpy - and Microsoft Foundry Local for on-device
+            inference when it's installed (with an offline fallback when it isn't).
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="{{ url_for('static', filename='i18n.js') }}"></script>
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

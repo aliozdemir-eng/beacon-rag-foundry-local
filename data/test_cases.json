@@ -1,0 +1,37 @@
+[
+  {
+    "id": "seed0001",
+    "question": "What is Retrieval-Augmented Generation?",
+    "expected_note": "Answerable - should cite rag_overview.md",
+    "verdict": "pass",
+    "last_answer": "Retrieval-Augmented Generation (RAG) is a pattern for building AI assistants that answer questions by retrieving relevant passages from a specific set of documents, augmenting the model's prompt with those passages as context, and generating an answer grounded in that context.\n\nSource document names:\n1. What is Retrieval-Augmented Generation (RAG)?\n\n(Note: Since the context provided is a single passage, I have used the same source name for both references.)",
+    "last_sources": [
+      "What is Retrieval-Augmented Generation (RAG)?"
+    ],
+    "last_run_at": "2026-09-16 22:44:00"
+  },
+  {
+    "id": "seed0002",
+    "question": "Why is SQLite a good fit for a small local knowledge base?",
+    "expected_note": "Answerable - should cite sqlite_for_local_storage.md",
+    "verdict": "pass",
+    "last_answer": "SQLite is a good fit for a small local knowledge base because it is a self-contained, serverless SQL database engine that stores the entire database in a single file, eliminating the need for a separate database server. This simplicity suits small projects aiming to avoid extra infrastructure. Additionally, SQLite can handle two related tables for storing source documents and their chunks, with embeddings serialized as JSON or binary blobs, making it practical for small-scale projects.\n\nSource document names:\n1. Why SQLite for a Local Knowledge Base\n2. What is Retrieval-Augmented Generation (RAG)?\n\nBoth source documents were used to provide context for the answer.",
+    "last_sources": [
+      "What is Retrieval-Augmented Generation (RAG)?",
+      "Why SQLite for a Local Knowledge Base"
+    ],
+    "last_run_at": "2026-09-16 22:44:26"
+  },
+  {
+    "id": "seed0003",
+    "question": "What is the capital of France?",
+    "expected_note": "Not in the knowledge base - should say it doesn't know, not guess",
+    "verdict": "pass",
+    "last_answer": "The provided context does not contain information about the capital of France.\nSource: What is Retrieval-Augmented Generation (RAG)?\nSource: Prompt Engineering for Grounded Question Answering",
+    "last_sources": [
+      "Prompt Engineering for Grounded Question Answering",
+      "What is Retrieval-Augmented Generation (RAG)?"
+    ],
+    "last_run_at": "2026-09-16 22:44:39"
+  }
+]
